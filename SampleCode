@@ -1,0 +1,151 @@
+package com.example.hackathon;
+
+import java.math.BigDecimal;
+import java.util.*;
+
+public class FileReaderService {
+    private static final String DEPOSIT = "deposit";
+    private static final String WITHDRAWAL = "withdrwal";
+    private static final String TRANSFER = "transfer";
+
+    /**
+     * @param transactions
+     * @throws ProcessingException
+     */
+
+    public void processTransactions(List<Transaction> transactions) throws ProcessingException {
+        Map<String, Account> accounts = new HashMap<>();
+        Set<String> accountNumbers = new HashSet<>();
+        Set<String> customerIds = new HashSet<>();
+        // Initialize accounts and validate transaction data
+        validateTransactionData(transactions, accounts, accountNumbers, customerIds);
+        // Validate account numbers and customer IDs
+        validateAccountNumbers(accountNumbers);
+        validateCustomerIds(customerIds);
+        // Process transactions
+        processTransactions(transactions, accounts);
+        // Print account summaries
+        printSummary(accounts);
+    }
+
+    /**
+     * @param customerIds
+     */
+    private void validateCustomerIds(Set<String> customerIds) {
+        for (String customerId : customerIds) {
+            if (!isValidCustomerId(customerId)) {
+                throw new ProcessingException("Invalid customer ID: " + customerId);
+            }
+        }
+    }
+
+    /**
+     * @param accountNumbers
+     */
+    private void validateAccountNumbers(Set<String> accountNumbers) {
+        for (String accountNumber : accountNumbers) {
+            if (!isValidAccountNumber(accountNumber)) {
+                throw new ProcessingException("Invalid account number: " + accountNumber);
+            }
+        }
+    }
+
+    /**
+     * @param accounts
+     */
+    private void printSummary(Map<String, Account> accounts) {
+        for (Account account : accounts.values()) {
+            System.out.println("Account number: " + account.getAccountNumber());
+            System.out.println("Customer ID: " + account.getCustomerId());
+            System.out.println("Balance: " + account.getBalance());
+            System.out.println("-----------------------------");
+        }
+    }
+
+    /**
+     * @param transactions
+     * @param accounts
+     */
+    private void processTransactions(List<Transaction> transactions, Map<String, Account> accounts) {
+        for (Transaction transaction : transactions) {
+            Account account = accounts.get(transaction.getAccountNumber());
+            switch (transaction.getTransactionType()) {
+                case DEPOSIT:
+                    account.setDeposit(transaction.getAmount());
+                    break;
+                case WITHDRAWAL:
+                    account.setWithdraw(transaction.getAmount());
+                    break;
+                case TRANSFER:
+                    if (transaction.getTransferToAccountNumber() == null ||
+                            transaction.getTransferToAccountNumber().isEmpty()) {
+                        throw new ProcessingException("Transfer to account number is missing");
+                    }
+                    Account transferAccount = accounts.get(transaction.getTransferToAccountNumber());
+                    if (transferAccount == null) {
+                        transferAccount = new Account();
+                        transferAccount.setAccountNumber(transaction.getTransferToAccountNumber());
+                        accounts.put(transaction.getTransferToAccountNumber(), transferAccount);
+                    }
+                    account.setTransfer(transaction.getAmount());
+                    break;
+                default:
+                    throw new ProcessingException("Unknown transaction type: " + transaction.getTransactionType());
+            }
+        }
+    }
+
+    /**
+     * @param transactions
+     * @param accounts
+     * @param accountNumbers
+     * @param customerIds
+     */
+    private void validateTransactionData(List<Transaction> transactions, Map<String, Account> accounts, Set<String> accountNumbers, Set<String> customerIds) {
+        for (Transaction transaction : transactions) {
+            if (transaction == null) {
+                throw new ProcessingException("Transaction data is null");
+            }
+            if (transaction.getAccountNumber() == null || transaction.getAccountNumber().isEmpty()) {
+                throw new ProcessingException("Account number is missing");
+            }
+            if (transaction.getAmount() == null || transaction.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ProcessingException("Transaction amount is invalid");
+            }
+            if (transaction.getCustomerId() == null || transaction.getCustomerId().isEmpty()) {
+                throw new ProcessingException("Customer ID is missing");
+            }
+            if (transaction.getTransactionType() == null) {
+                throw new ProcessingException("Transaction type is missing");
+            }
+
+            Account account = accounts.get(transaction.getAccountNumber());
+            if (account == null) {
+                account = new Account();
+                account.setAccountNumber(transaction.getAccountNumber());
+                accounts.put(transaction.getAccountNumber(), account);
+            }
+            accountNumbers.add(transaction.getAccountNumber());
+            customerIds.add(transaction.getCustomerId());
+        }
+    }
+
+    /**
+     * @param accountNumber
+     * @return
+     */
+    private boolean isValidAccountNumber(String accountNumber) {
+        // Validation logic goes here
+        return true;
+    }
+
+    /**
+     * @param customerId
+     * @return
+     */
+    private boolean isValidCustomerId(String customerId) {
+        // Validation logic goes here
+        return true;
+    }
+
+}
